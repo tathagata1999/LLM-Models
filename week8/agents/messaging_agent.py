@@ -3,14 +3,17 @@ from agents.deals import Opportunity
 from agents.agent import Agent
 from litellm import completion
 import requests
-
+from openai import OpenAI
+api_key = os.getenv('OPENAI_API_KEY')
 pushover_url = "https://api.pushover.net/1/messages.json"
-
+openai = OpenAI()
 
 class MessagingAgent(Agent):
     name = "Messaging Agent"
     color = Agent.WHITE
-    MODEL = "claude-sonnet-4-5"
+    MODEL = 'gpt-5-nano'
+
+# Claude is also a great option for crafting messages, and often has a more conversational tone which can be good for messaging. But GPT-4o is cheaper and still does a great job.
 
     def __init__(self):
         """
@@ -21,7 +24,7 @@ class MessagingAgent(Agent):
         self.log("Messaging Agent is initializing")
         self.pushover_user = os.getenv("PUSHOVER_USER", "your-pushover-user-if-not-using-env")
         self.pushover_token = os.getenv("PUSHOVER_TOKEN", "your-pushover-user-if-not-using-env")
-        self.log("Messaging Agent has initialized Pushover and Claude")
+        self.log("Messaging Agent has initialized Pushover and openai")
 
     def push(self, text):
         """
@@ -54,7 +57,7 @@ class MessagingAgent(Agent):
         user_prompt = "Please summarize this great deal in 2-3 sentences to be sent as an exciting push notification alerting the user about this deal.\n"
         user_prompt += f"Item Description: {description}\nOffered Price: {deal_price}\nEstimated true value: {estimated_true_value}"
         user_prompt += "\n\nRespond only with the 2-3 sentence message which will be used to alert & excite the user about this deal"
-        response = completion(
+        response = openai.chat.completions.create(
             model=self.MODEL,
             messages=[
                 {"role": "user", "content": user_prompt},
@@ -66,7 +69,7 @@ class MessagingAgent(Agent):
         """
         Make an alert about the specified details
         """
-        self.log("Messaging Agent is using Claude to craft the message")
+        self.log(f"Messaging Agent is using {self.MODEL} to craft the message")
         text = self.craft_message(description, deal_price, estimated_true_value)
         self.push(text[:200] + "... " + url)
         self.log("Messaging Agent has completed")
